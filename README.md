@@ -13,7 +13,7 @@ se tiver grupo inicialmente
 caso aja mesa, envia o grupo para uma mesa
 se não, manda esperar
 Recebe pagamento.
-empregado de mesa:
+empregado de mesa: 
 levava pedido para o cosinheiro
 quand0 comida estiver pronta leva para a mesa.
 cozinheiro:
