@@ -1,3 +1,4 @@
 # Object files
 run*
 *.ods#
+*.o
