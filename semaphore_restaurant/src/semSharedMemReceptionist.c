@@ -150,8 +150,28 @@ int main (int argc, char *argv[])
 static int decideTableOrWait(int n)
 {
      //TODO insert your code here
+     
+     if(semDown(semgid, sh->mutex) == -1) {
+        perror("error on the  operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+     }
 
-     return -1;
+     if (sh->fSt.st.groupStat[n] == GOTOREST){
+        if(semUp(semgid, sh->mutex) == -1) {
+            perror("error on the up operation for semaphore access (WT)");
+            exit(EXIT_FAILURE);
+        }
+
+        return TABLEREQ;
+     }
+    
+    if (semUp(semgid, sh->mutex) == -1) {
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+    }
+
+    return -1;
+
 }
 
 /**
@@ -166,7 +186,26 @@ static int decideNextGroup()
 {
      //TODO insert your code here
 
-     return -1;
+     int nextGroup = -1;
+
+        if(semDown(semgid, sh->mutex) == -1) {
+            perror("error on the down operation for semaphore access (WT)");
+            exit(EXIT_FAILURE);
+        }
+
+        for (int i = 0; i < sh->fSt.nGroups; i++){
+            if (sh->fSt.st.groupStat[i] == GOTOREST){
+                nextGroup = i;
+                break;
+            }
+        }
+
+        if(semUp(semgid, sh->mutex) == -1) {
+            perror("error on the up operation for semaphore access (WT)");
+            exit(EXIT_FAILURE);
+        }
+
+     return nextGroup;
 }
 
 /**
@@ -188,6 +227,11 @@ static request waitForGroup()
     }
 
     // TODO insert your code here
+
+    sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
+    saveState(nFic, &sh->fSt);
+
+    /* fim */
     
     if (semUp (semgid, sh->mutex) == -1)      {                                             /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
@@ -196,6 +240,13 @@ static request waitForGroup()
 
     // TODO insert your code here
 
+    if (semDown (semgid, sh->receptionistReq) == -1)  {
+        perror ("error on the up operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
+
+    /* fim */
+
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -203,12 +254,26 @@ static request waitForGroup()
 
     // TODO insert your code here
 
+    ret = sh->fSt.receptionistRequest;
+    sh->fSt.receptionistRequest.reqType = -1;
+    sh->fSt.receptionistRequest.reqGroup = -1;
+    saveState(nFic, &sh->fSt);
+
+    /* fim */
+
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
+
+    if (semUp (semgid, sh->receptionistRequestPossible) == -1) { 
+        perror ("error on the down operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
+
+    /* fim */
 
     return ret;
 
@@ -231,6 +296,12 @@ static void provideTableOrWaitingRoom (int n)
     }
 
     // TODO insert your code here
+
+    sh->fSt.st.receptionistStat = ASSIGNTABLE;
+    sh->fSt.st.groupStat[n] = ATTABLE;
+    saveState(nFic, &sh->fSt);
+
+    /* fim */
 
     if (semUp (semgid, sh->mutex) == -1) {                                               /* exit critical region */
         perror ("error on the down operation for semaphore access (WT)");
@@ -258,11 +329,23 @@ static void receivePayment (int n)
 
     // TODO insert your code here
 
+    sh->fSt.st.receptionistStat = RECVPAY;
+    sh->fSt.st.groupStat[n] = TABLEDONE;
+    saveState(nFic, &sh->fSt);
+
+    /* fim */
+
     if (semUp (semgid, sh->mutex) == -1)  {                                                  /* exit critical region */
      perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
-}
 
+    if (semUp (semgid, sh->tableDone[n]) == -1) { 
+        perror ("error on the down operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
+
+    /* fim */
+}
