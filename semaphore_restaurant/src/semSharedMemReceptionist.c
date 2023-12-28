@@ -239,6 +239,10 @@ static request waitForGroup()
     }
 
     // TODO insert your code here
+    if (semUp (semgid, sh->receptionistRequestPossible) == -1) { 
+            perror ("error on the down operation for semaphore access (WT)");
+            exit (EXIT_FAILURE);
+        }
 
     if (semDown (semgid, sh->receptionistReq) == -1)  {
         perror ("error on the up operation for semaphore access (WT)");
@@ -268,10 +272,7 @@ static request waitForGroup()
 
     // TODO insert your code here
 
-    if (semUp (semgid, sh->receptionistRequestPossible) == -1) { 
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    
 
     /* fim */
 
@@ -298,7 +299,7 @@ static void provideTableOrWaitingRoom (int n)
     // TODO insert your code here
 
     sh->fSt.st.receptionistStat = ASSIGNTABLE;
-    sh->fSt.st.groupStat[n] = ATTABLE;
+    //sh->fSt.st.groupStat[n] = ATTABLE;
     saveState(nFic, &sh->fSt);
 
     /* fim */
@@ -330,7 +331,7 @@ static void receivePayment (int n)
     // TODO insert your code here
 
     sh->fSt.st.receptionistStat = RECVPAY;
-    sh->fSt.st.groupStat[n] = TABLEDONE;
+    //sh->fSt.st.groupStat[n] = TABLEDONE;
     saveState(nFic, &sh->fSt);
 
     /* fim */

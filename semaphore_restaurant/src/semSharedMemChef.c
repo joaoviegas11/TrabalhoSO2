@@ -176,9 +176,9 @@ static void processOrder ()
         exit (EXIT_FAILURE);
     }
 
-    sh->fSt.st.chefStat = REST;
     sh->fSt.waiterRequest.reqGroup = lastGroup;
     sh->fSt.waiterRequest.reqType = FOODREADY;
+    sh->fSt.st.chefStat = REST;
     saveState(nFic, &sh->fSt);
 
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */

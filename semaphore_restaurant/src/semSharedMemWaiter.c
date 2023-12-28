@@ -107,6 +107,7 @@ int main (int argc, char *argv[])
         req = waitForClientOrChef();
         switch(req.reqType) {
             case FOODREQ:
+                    printf("%d\n",req.reqGroup);
                    informChef(req.reqGroup);
                    break;
             case FOODREADY:
@@ -150,14 +151,14 @@ static request waitForClientOrChef()
     /* fim */
     
     if (semUp (semgid, sh->mutex) == -1)      {                                             /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
+        perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
     if (semDown (semgid, sh->waiterRequest) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
+        perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
@@ -178,14 +179,14 @@ static request waitForClientOrChef()
     /* fim */
 
     if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
+        perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
     if (semUp (semgid, sh->waiterRequestPossible) == -1) {                                                  /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
+        perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 
@@ -214,7 +215,6 @@ static void informChef (int n)
     // TODO insert your code here
 
     sh->fSt.st.waiterStat = INFORM_CHEF;
-    sh->fSt.st.groupStat[n] = FOOD_REQUEST;
     sh->fSt.foodOrder = 1;
     saveState(nFic, &sh->fSt);
 
@@ -227,7 +227,7 @@ static void informChef (int n)
 
     
     // TODO insert your code here
-
+                    printf("requestReceived[n]: %d\n",sh->requestReceived[n]);
     if (semUp(semgid, sh->requestReceived[n]) == -1) { 
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -261,7 +261,6 @@ static void takeFoodToTable (int n)
     // TODO insert your code here
 
     sh->fSt.st.waiterStat = TAKE_TO_TABLE;
-    sh->fSt.st.groupStat[n] = EAT;
     saveState(nFic, &sh->fSt);
 
     for (int i = 0; i < sh->fSt.nGroups; i++) {
@@ -272,6 +271,8 @@ static void takeFoodToTable (int n)
             }
         }
     }
+
+    
     
     /* fim */
 

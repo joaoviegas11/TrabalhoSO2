@@ -53,5 +53,5 @@ clean:
 
 cleanall:	clean
 	rm -f ../run/$(MAIN) ../run/chef ../run/waiter ../run/group ../run/receptionist
-test: cleanall ch
+test: cleanall all_bin
 	  ipcrm -a
