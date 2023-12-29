@@ -174,6 +174,8 @@ static request waitForClientOrChef()
     req = sh->fSt.waiterRequest;
     sh->fSt.waiterRequest.reqType = -1;
     sh->fSt.waiterRequest.reqGroup = -1;
+    printf("req.reqType: %d\n",req.reqType);
+    printf("req.reqGroup: %d\n",req.reqGroup);
     saveState(nFic, &sh->fSt);
 
     /* fim */
@@ -216,6 +218,7 @@ static void informChef (int n)
 
     sh->fSt.st.waiterStat = INFORM_CHEF;
     sh->fSt.foodOrder = 1;
+    sh->fSt.foodGroup = n;
     saveState(nFic, &sh->fSt);
 
     /* fim */
@@ -263,17 +266,22 @@ static void takeFoodToTable (int n)
     sh->fSt.st.waiterStat = TAKE_TO_TABLE;
     saveState(nFic, &sh->fSt);
 
+    printf("n: %d\n",n);
+
     for (int i = 0; i < sh->fSt.nGroups; i++) {
-        if (sh->fSt.assignedTable[i] == n) {
-            if (semUp (semgid, sh->foodArrived[i]) == -1) { 
+
+        if (sh->fSt.assignedTable[i] == sh->fSt.assignedTable[n]) {
+            printf("sh->fSt.assignedTable[i]: %d\n",sh->fSt.assignedTable[i]);
+            if (semUp (semgid, sh->foodArrived[sh->fSt.assignedTable[n]]) == -1) { 
                 perror ("error on the up operation for semaphore access (WT)");
                 exit (EXIT_FAILURE);
             }
         }
     }
 
-    
-    
+    sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
+    saveState(nFic, &sh->fSt);
+
     /* fim */
 
     if (semUp (semgid, sh->mutex) == -1)  {                                                  /* exit critical region */

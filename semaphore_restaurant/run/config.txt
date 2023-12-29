@@ -1,5 +1,5 @@
 #ngroups
-5
+3
 #startTime timeToEat
 50000 100000 
 10000 600000
