@@ -169,17 +169,28 @@ static void waitForOrder ()
 static void processOrder ()
 {
     usleep((unsigned int) floor ((MAXCOOK * random ()) / RAND_MAX + 100.0));
+    
+    if (semUp (semgid, sh->orderReceived) == -1) {                                             /* exit critical region */
+        perror ("error on the up operation for semaphore access (PT)");
+        exit (EXIT_FAILURE);
+    }
+
+    if (semDown(semgid, sh->waiterRequestPossible) == -1) {                                             /* exit critical region */
+            perror ("error on the up operation for semaphore access (PT)");
+            exit (EXIT_FAILURE);
+        }
 
     //TODO insert your code here
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
-    sh->fSt.waiterRequest.reqGroup = sh->fSt.foodGroup;
-    sh->fSt.waiterRequest.reqType = FOODREADY;
+    
     sh->fSt.st.chefStat = REST;
-
+    sh->fSt.waiterRequest.reqType = FOODREADY;
+    sh->fSt.waiterRequest.reqGroup = lastGroup;
     saveState(nFic, &sh->fSt);
+
 
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
@@ -187,15 +198,9 @@ static void processOrder ()
     }
 
 
-     if (semUp (semgid, sh->orderReceived) == -1) {                                             /* exit critical region */
-        perror ("error on the up operation for semaphore access (PT)");
-        exit (EXIT_FAILURE);
-    }
     
-    if (semUp (semgid, sh->waiterRequestPossible) == -1) {                                             /* exit critical region */
-        perror ("error on the up operation for semaphore access (PT)");
-        exit (EXIT_FAILURE);
-    }
+    
+    
 
     if (semUp (semgid, sh->waiterRequest) == -1) {                                             /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
