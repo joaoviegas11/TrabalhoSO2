@@ -230,8 +230,8 @@ static void informChef (int n)
 
     
     // TODO insert your code here
-                    printf("requestReceived[n]: %d\n",sh->requestReceived[n]);
-    if (semUp(semgid, sh->requestReceived[n]) == -1) { 
+                    printf("requestReceived[n]: %d\n",sh->requestReceived[sh->fSt.assignedTable[n]]);
+    if (semUp(semgid, sh->requestReceived[sh->fSt.assignedTable[n]]) == -1) { 
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
@@ -256,6 +256,9 @@ static void informChef (int n)
 
 static void takeFoodToTable (int n)
 {
+    sh->fSt.st.waiterStat = TAKE_TO_TABLE;
+    saveState(nFic, &sh->fSt);
+
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -263,24 +266,15 @@ static void takeFoodToTable (int n)
 
     // TODO insert your code here
 
-    sh->fSt.st.waiterStat = TAKE_TO_TABLE;
-    saveState(nFic, &sh->fSt);
+    
 
     printf("n: %d\n",n);
-
-    for (int i = 0; i < sh->fSt.nGroups; i++) {
-
-        if (sh->fSt.assignedTable[i] == sh->fSt.assignedTable[n]) {
-            printf("sh->fSt.assignedTable[i]: %d\n",sh->fSt.assignedTable[i]);
-            if (semUp (semgid, sh->foodArrived[sh->fSt.assignedTable[n]]) == -1) { 
-                perror ("error on the up operation for semaphore access (WT)");
-                exit (EXIT_FAILURE);
-            }
-        }
+    printf("sh->fSt.assignedTable[i]: %d\n",sh->fSt.assignedTable[n]);
+    if (semUp (semgid, sh->foodArrived[sh->fSt.assignedTable[n]]) == -1) { 
+        perror ("error on the up operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
     }
 
-    sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
-    saveState(nFic, &sh->fSt);
 
     /* fim */
 
