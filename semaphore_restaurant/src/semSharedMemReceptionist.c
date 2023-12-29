@@ -151,12 +151,13 @@ int decideTableOrWait(int n)
 {
     int tableID = -1;
 
-    for (int i = 0; i < sh->fSt.nGroups; i++){
+        for (int i = 0; i < sh->fSt.nGroups; i++){
         if (TABLEDONE){
             tableID = i;
             break;
         }
     }
+
     return tableID;
 }
 
@@ -175,21 +176,11 @@ static int decideNextGroup()
 
      int nextGroup = -1;
 
-        if(semDown(semgid, sh->mutex) == -1) {
-            perror("error on the down operation for semaphore access (WT)");
-            exit(EXIT_FAILURE);
-        }
-
         for (int i = 0; i < sh->fSt.nGroups; i++){
             if (sh->fSt.st.groupStat[i] == GOTOREST){
                 nextGroup = i;
                 break;
             }
-        }
-
-        if(semUp(semgid, sh->mutex) == -1) {
-            perror("error on the up operation for semaphore access (WT)");
-            exit(EXIT_FAILURE);
         }
 
      return nextGroup;
@@ -340,6 +331,8 @@ static void receivePayment (int n)
     // TODO insert your code here
 
     sh->fSt.assignedTable[n] = -1;
+    saveState(nFic, &sh->fSt);
+
     if (semUp (semgid, sh->tableDone[n]) == -1) { 
         perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
