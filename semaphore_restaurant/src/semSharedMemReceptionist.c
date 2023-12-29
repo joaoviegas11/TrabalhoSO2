@@ -44,97 +44,105 @@ static SHARED_DATA *sh;
 
 /* constants for groupRecord */
 #define TOARRIVE 0
-#define WAIT     1
-#define ATTABLE  2
-#define DONE     3
+#define WAIT 1
+#define ATTABLE 2
+#define DONE 3
 
 /** \brief receptioninst view on each group evolution (useful to decide table binding) */
 static int groupRecord[MAXGROUPS];
 
+/** \brief receptionist waits for next request */
+static request waitForGroup();
 
 /** \brief receptionist waits for next request */
-static request waitForGroup ();
-
-/** \brief receptionist waits for next request */
-static void provideTableOrWaitingRoom (int n);
+static void provideTableOrWaitingRoom(int n);
 
 /** \brief receptionist receives payment */
-static void receivePayment (int n);
-
-
+static void receivePayment(int n);
 
 /**
  *  \brief Main program.
  *
  *  Its role is to generate the life cycle of one of intervening entities in the problem: the receptionist.
  */
-int main (int argc, char *argv[])
+int main(int argc, char *argv[])
 {
-    int key;                                            /*access key to shared memory and semaphore set */
-    char *tinp;                                                       /* numerical parameters test flag */
+    int key;    /*access key to shared memory and semaphore set */
+    char *tinp; /* numerical parameters test flag */
 
     /* validation of command line parameters */
-    if (argc != 4) { 
-        freopen ("error_RT", "a", stderr);
-        fprintf (stderr, "Number of parameters is incorrect!\n");
+    if (argc != 4)
+    {
+        freopen("error_RT", "a", stderr);
+        fprintf(stderr, "Number of parameters is incorrect!\n");
         return EXIT_FAILURE;
     }
-    else { 
-        freopen (argv[3], "w", stderr);
-        setbuf(stderr,NULL);
+    else
+    {
+        freopen(argv[3], "w", stderr);
+        setbuf(stderr, NULL);
     }
 
-    strcpy (nFic, argv[1]);
-    key = (unsigned int) strtol (argv[2], &tinp, 0);
-    if (*tinp != '\0') {   
-        fprintf (stderr, "Error on the access key communication!\n");
+    strcpy(nFic, argv[1]);
+    key = (unsigned int)strtol(argv[2], &tinp, 0);
+    if (*tinp != '\0')
+    {
+        fprintf(stderr, "Error on the access key communication!\n");
         return EXIT_FAILURE;
     }
 
     /* connection to the semaphore set and the shared memory region and mapping the shared region onto the
        process address space */
-    if ((semgid = semConnect (key)) == -1) { 
-        perror ("error on connecting to the semaphore set");
+    if ((semgid = semConnect(key)) == -1)
+    {
+        perror("error on connecting to the semaphore set");
         return EXIT_FAILURE;
     }
-    if ((shmid = shmemConnect (key)) == -1) { 
-        perror ("error on connecting to the shared memory region");
+    if ((shmid = shmemConnect(key)) == -1)
+    {
+        perror("error on connecting to the shared memory region");
         return EXIT_FAILURE;
     }
-    if (shmemAttach (shmid, (void **) &sh) == -1) { 
-        perror ("error on mapping the shared region on the process address space");
+    if (shmemAttach(shmid, (void **)&sh) == -1)
+    {
+        perror("error on mapping the shared region on the process address space");
         return EXIT_FAILURE;
     }
 
     /* initialize random generator */
-    srandom ((unsigned int) getpid ());              
+    srandom((unsigned int)getpid());
 
     /* initialize internal receptionist memory */
     int g;
-    for (g=0; g < sh->fSt.nGroups; g++) {
-       groupRecord[g] = TOARRIVE;
+    for (g = 0; g < sh->fSt.nGroups; g++)
+    {
+        groupRecord[g] = TOARRIVE;
     }
 
     /* simulation of the life cycle of the receptionist */
-    int nReq=0;
+    int nReq = 0;
     request req;
-    while( nReq < sh->fSt.nGroups*2 ) {
-        req = waitForGroup(); 
-        switch(req.reqType) {
-            case TABLEREQ:
-                   provideTableOrWaitingRoom(req.reqGroup); //TODO param should be groupid
-                   break;
-            case BILLREQ:
-                   receivePayment(req.reqGroup);
-                   break;
+    while (nReq < sh->fSt.nGroups * 2)
+    {
+        req = waitForGroup();
+        switch (req.reqType)
+        {
+        case TABLEREQ:
+            provideTableOrWaitingRoom(req.reqGroup); // TODO param should be groupid
+            break;
+        case BILLREQ:
+            receivePayment(req.reqGroup);
+            break;
         }
         nReq++;
     }
 
     /* unmapping the shared region off the process address space */
-    if (shmemDettach (sh) == -1) {
-        perror ("error on unmapping the shared region off the process address space");
-        return EXIT_FAILURE;;
+    if (shmemDettach(sh) == -1)
+    {
+        perror("error on unmapping the shared region off the process address space");
+        return EXIT_FAILURE;
+        ;
     }
 
     return EXIT_SUCCESS;
@@ -150,35 +158,36 @@ int main (int argc, char *argv[])
 int decideTableOrWait(int n)
 {
     int tableID = -1;
-    int mesa,NaoUsada;
-        
+    int mesa, NaoUsada;
+
     for (mesa = 0; mesa < NUMTABLES; mesa++)
     {
-        NaoUsada=1;
-    for (int i = 0; i < sh->fSt.nGroups; i++){
-        //if (groupRecord[i] !=WAIT){
-        //    continue;
-        //}
-        if (sh->fSt.assignedTable[i]==mesa){
+        NaoUsada = 1;
+        for (int i = 0; i < sh->fSt.nGroups; i++)
+        {
+            // if (groupRecord[i] !=WAIT){
+            //     continue;
+            // }
+            if (sh->fSt.assignedTable[i] == mesa)
+            {
 
-            NaoUsada=0;
+                NaoUsada = 0;
+                break;
+            }
+        }
+        if (NaoUsada)
+        {
+            // printf("mesa: %d\n",mesa);
+            tableID = mesa;
             break;
         }
     }
-    if (NaoUsada){
-    printf("mesa: %d\n",mesa);
-        tableID = mesa;
-        break;
-    }
-    }
-    
-    
+
     return tableID;
 }
 
-
 /**
- *  \brief called when a table gets vacant and there are waiting groups 
+ *  \brief called when a table gets vacant and there are waiting groups
  *         to decide which group (if any) should occupy it.
  *
  *  Checks current state of tables and groups in order to decide group.
@@ -187,22 +196,29 @@ int decideTableOrWait(int n)
  */
 static int decideNextGroup()
 {
-     //TODO insert your code here
+    // TODO insert your code here
 
-     int nextGroup = -1;
-
-        for (int i = 0; i < sh->fSt.nGroups; i++){
-            if (sh->fSt.st.groupStat[i] == GOTOREST){
-                nextGroup = i;
-                break;
-            }
+    int nextGroup = -1;
+    printf("groupRecord\n");
+    for (int i = 0; i < sh->fSt.nGroups; i++)
+    {
+        printf("%d ", groupRecord[i]);
+    }
+    printf("\n");
+    for (int i = 0; i < sh->fSt.nGroups; i++)
+    {
+        if (groupRecord[i] == WAIT)
+        {
+            nextGroup = i;
+            break;
         }
+    }
 
-     return nextGroup;
+    return nextGroup;
 }
 
 /**
- *  \brief receptionist waits for next request 
+ *  \brief receptionist waits for next request
  *
  *  Receptionist updates state and waits for request from group, then reads request,
  *  and signals availability for new request.
@@ -212,11 +228,12 @@ static int decideNextGroup()
  */
 static request waitForGroup()
 {
-    request ret; 
+    request ret;
 
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if (semDown(semgid, sh->mutex) == -1)
+    { /* enter critical region */
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
@@ -225,52 +242,57 @@ static request waitForGroup()
     saveState(nFic, &sh->fSt);
 
     /* fim */
-    
-    if (semUp (semgid, sh->mutex) == -1)      {                                             /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+
+    if (semUp(semgid, sh->mutex) == -1)
+    { /* exit critical region */
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
 
-    // TODO insert your code here
-    if (semUp (semgid, sh->receptionistRequestPossible) == -1) { 
-            perror ("error on the down operation for semaphore access (WT)");
-            exit (EXIT_FAILURE);
-        }
-
-    if (semDown (semgid, sh->receptionistReq) == -1)  {
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    // TODO insert your code here 
+    if (semDown(semgid, sh->receptionistReq) == -1)
+    {
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
+    if (semUp(semgid, sh->receptionistRequestPossible) == -1)
+    {
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+    }
+
+   
 
     /* fim */
 
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if (semDown(semgid, sh->mutex) == -1)
+    { /* enter critical region */
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
     ret = sh->fSt.receptionistRequest;
-    sh->fSt.receptionistRequest.reqType = -1;
-    sh->fSt.receptionistRequest.reqGroup = -1;
+    printf("Grup: %d ,type: %d\n",ret.reqGroup,
+    ret.reqType);
+    sh->fSt.receptionistRequest.reqType = 40;
+    sh->fSt.receptionistRequest.reqGroup = 40;
     saveState(nFic, &sh->fSt);
 
     /* fim */
 
-    if (semUp (semgid, sh->mutex) == -1) {                                                  /* exit critical region */
-     perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if (semUp(semgid, sh->mutex) == -1)
+    { /* exit critical region */
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
-    
-
     /* fim */
 
     return ret;
-
 }
 
 /**
@@ -278,43 +300,52 @@ static request waitForGroup()
  *
  *  Receptionist updates state and then decides if group occupies table
  *  or waits. Shared (and internal) memory may need to be updated.
- *  If group occupies table, it must be informed that it may proceed. 
+ *  If group occupies table, it must be informed that it may proceed.
  *  The internal state should be saved.
  *
  */
-static void provideTableOrWaitingRoom (int n)
+static void provideTableOrWaitingRoom(int n)
 {
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if (semDown(semgid, sh->mutex) == -1)
+    { /* enter critical region */
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
-
+    if(n==1){
+    printf("1: %d,\n",n);
+    }
     // TODO insert your code here
 
     sh->fSt.st.receptionistStat = ASSIGNTABLE;
     saveState(nFic, &sh->fSt);
 
-    if (decideTableOrWait(n) != -1){
+    if (decideTableOrWait(n) != -1)
+    {
         sh->fSt.assignedTable[n] = decideTableOrWait(n);
-        if (semUp (semgid, sh->waitForTable[n]) == -1) { 
-            perror ("error on the down operation for semaphore access (WT)");
-            exit (EXIT_FAILURE);
+        groupRecord[n] = ATTABLE;
+        if (semUp(semgid, sh->waitForTable[n]) == -1)
+        {
+            perror("error on the down operation for semaphore access (WT)");
+            exit(EXIT_FAILURE);
         }
-    } else {
+    }
+    else
+    {
+        sh->fSt.groupsWaiting++;
         groupRecord[n] = WAIT;
     }
 
     /* fim */
 
-    if (semUp (semgid, sh->mutex) == -1) {                                               /* exit critical region */
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if (semUp(semgid, sh->mutex) == -1)
+    { /* exit critical region */
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
-
 }
 
 /**
- *  \brief receptionist receives payment 
+ *  \brief receptionist receives payment
  *
  *  Receptionist updates its state and receives payment.
  *  If there are waiting groups, receptionist should check if table that just became
@@ -323,34 +354,39 @@ static void provideTableOrWaitingRoom (int n)
  *
  */
 
-static void receivePayment (int n)
+static void receivePayment(int n)
 {
-    if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if (semDown(semgid, sh->mutex) == -1)
+    { /* enter critical region */
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
     sh->fSt.st.receptionistStat = RECVPAY;
     saveState(nFic, &sh->fSt);
-if (semUp (semgid, sh->tableDone[sh->fSt.assignedTable[n] ]) == -1) { 
-        perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if (semUp(semgid, sh->tableDone[sh->fSt.assignedTable[n]]) == -1)
+    {
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
-sh->fSt.assignedTable[n] = -1;
+    sh->fSt.assignedTable[n] = -1;
+    groupRecord[n] = DONE;
+
     saveState(nFic, &sh->fSt);
 
-    if (semUp (semgid, sh->mutex) == -1)  {                                                  /* exit critical region */
-     perror ("error on the down operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
+    if (semUp(semgid, sh->mutex) == -1)
+    { /* exit critical region */
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
     }
 
-    // TODO insert your code here
-
-    
-
-    
+    if (decideNextGroup() != -1)
+    {
+        provideTableOrWaitingRoom(decideNextGroup());
+        sh->fSt.groupsWaiting--;
+    }
 
     /* fim */
 }
