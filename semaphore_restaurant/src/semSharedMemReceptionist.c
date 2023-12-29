@@ -147,32 +147,19 @@ int main (int argc, char *argv[])
  *
  *  \return table id or -1 (in case of wait decision)
  */
-static int decideTableOrWait(int n)
+int decideTableOrWait(int n)
 {
-     //TODO insert your code here
-     
-     if(semDown(semgid, sh->mutex) == -1) {
-        perror("error on the  operation for semaphore access (WT)");
-        exit(EXIT_FAILURE);
-     }
+    int tableID = -1;
 
-     if (sh->fSt.st.groupStat[n] == GOTOREST){
-        if(semUp(semgid, sh->mutex) == -1) {
-            perror("error on the up operation for semaphore access (WT)");
-            exit(EXIT_FAILURE);
+    for (int i = 0; i < sh->fSt.nGroups; i++){
+        if (TABLEDONE){
+            tableID = i;
+            break;
         }
-
-        return TABLEREQ;
-     }
-    
-    if (semUp(semgid, sh->mutex) == -1) {
-        perror("error on the up operation for semaphore access (WT)");
-        exit(EXIT_FAILURE);
     }
-
-    return -1;
-
+    return tableID;
 }
+
 
 /**
  *  \brief called when a table gets vacant and there are waiting groups 
@@ -299,8 +286,18 @@ static void provideTableOrWaitingRoom (int n)
     // TODO insert your code here
 
     sh->fSt.st.receptionistStat = ASSIGNTABLE;
-    //sh->fSt.st.groupStat[n] = ATTABLE;
     saveState(nFic, &sh->fSt);
+
+    if (decideTableOrWait(n) != -1){
+        sh->fSt.assignedTable[n] = decideTableOrWait(n);
+        if (semUp (semgid, sh->waitForTable[n]) == -1) { 
+            perror ("error on the down operation for semaphore access (WT)");
+            exit (EXIT_FAILURE);
+        }
+    } else {
+        sh->fSt.st.groupStat[n] = WAIT;
+        saveState(nFic, &sh->fSt);
+    }
 
     /* fim */
 
@@ -331,7 +328,6 @@ static void receivePayment (int n)
     // TODO insert your code here
 
     sh->fSt.st.receptionistStat = RECVPAY;
-    //sh->fSt.st.groupStat[n] = TABLEDONE;
     saveState(nFic, &sh->fSt);
 
     /* fim */
@@ -343,6 +339,7 @@ static void receivePayment (int n)
 
     // TODO insert your code here
 
+    sh->fSt.assignedTable[n] = -1;
     if (semUp (semgid, sh->tableDone[n]) == -1) { 
         perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
