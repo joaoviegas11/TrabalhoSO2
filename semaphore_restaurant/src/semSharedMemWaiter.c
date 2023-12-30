@@ -107,7 +107,7 @@ int main (int argc, char *argv[])
         req = waitForClientOrChef();
         switch(req.reqType) {
             case FOODREQ:
-                    printf("%d\n",req.reqGroup);
+                    //printf("%d\n",req.reqGroup);
                    informChef(req.reqGroup);
                    break;
             case FOODREADY:
@@ -156,15 +156,15 @@ static request waitForClientOrChef()
     }
 
     // TODO insert your code here
-    if (semUp (semgid, sh->waiterRequestPossible) == -1) {                                                  /* exit critical region */
-        perror ("error on the up operation for semaphore access (WT)");
-        exit (EXIT_FAILURE);
-    }
+    
     if (semDown (semgid, sh->waiterRequest) == -1)  {                                                  /* enter critical region */
         perror ("error on the down operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
-
+    if (semUp (semgid, sh->waiterRequestPossible) == -1) {                                                  /* exit critical region */
+        perror ("error on the up operation for semaphore access (WT)");
+        exit (EXIT_FAILURE);
+    }
     /* fim */
 
     if (semDown (semgid, sh->mutex) == -1)  {                                                  /* enter critical region */
@@ -175,10 +175,12 @@ static request waitForClientOrChef()
     // TODO insert your code here
 
     req = sh->fSt.waiterRequest;
+    printf("Grup: %d ,type: %d\n",req.reqGroup,
+    req.reqType);
     sh->fSt.waiterRequest.reqType = -1;
     sh->fSt.waiterRequest.reqGroup = -1;
-    printf("req.reqType: %d\n",req.reqType);
-    printf("req.reqGroup: %d\n",req.reqGroup);
+    //printf("req.reqType: %d\n",req.reqType);
+    //printf("req.reqGroup: %d\n",req.reqGroup);
     saveState(nFic, &sh->fSt);
 
     /* fim */
@@ -229,7 +231,7 @@ static void informChef (int n)
 
     
     // TODO insert your code here
-                    printf("requestReceived[n]: %d\n",sh->requestReceived[sh->fSt.assignedTable[n]]);
+    //printf("requestReceived[n]: %d\n",sh->requestReceived[sh->fSt.assignedTable[n]]);
     if (semUp(semgid, sh->requestReceived[sh->fSt.assignedTable[n]]) == -1) { 
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
@@ -274,8 +276,8 @@ static void takeFoodToTable (int n)
 
     
 
-    printf("n: %d\n",n);
-    printf("sh->fSt.assignedTable[i]: %d\n",sh->fSt.assignedTable[n]);
+    //printf("n: %d\n",n);
+    //printf("sh->fSt.assignedTable[i]: %d\n",sh->fSt.assignedTable[n]);
     if (semUp (semgid, sh->foodArrived[sh->fSt.assignedTable[n]]) == -1) { 
         perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);

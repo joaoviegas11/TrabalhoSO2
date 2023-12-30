@@ -157,33 +157,36 @@ int main(int argc, char *argv[])
  */
 int decideTableOrWait(int n)
 {
-    int tableID = -1;
-    int mesa, NaoUsada;
+    // TODO insert your code here
 
-    for (mesa = 0; mesa < NUMTABLES; mesa++)
+    // ID da mesa em que o grupo se ira sentar
+    int tableID = -1;
+    // Numero de mesa a atribuir (0 ou 1) e variavel para saber se a mesa esta em uso
+    int numTable, notInUse;
+
+    // Ciclos para verificar se existem mesas disponiveis ou nao
+    for (numTable = 0; numTable < NUMTABLES; numTable++)
     {
-        NaoUsada = 1;
+        notInUse = 1;
         for (int i = 0; i < sh->fSt.nGroups; i++)
         {
-            // if (groupRecord[i] !=WAIT){
-            //     continue;
-            // }
-            if (sh->fSt.assignedTable[i] == mesa)
+            if (sh->fSt.assignedTable[i] == numTable)
             {
-
-                NaoUsada = 0;
+                notInUse = 0;
                 break;
             }
         }
-        if (NaoUsada)
+        if (notInUse)
         {
-            // printf("mesa: %d\n",mesa);
-            tableID = mesa;
+            // Se existirem mesas disponiveis, atribuir ao ID o numero disponivel (0 ou 1)
+            tableID = numTable;
             break;
         }
     }
 
     return tableID;
+
+    /* fim */
 }
 
 /**
@@ -198,13 +201,10 @@ static int decideNextGroup()
 {
     // TODO insert your code here
 
+    // ID do proximo grupo a ser atendido
     int nextGroup = -1;
-    printf("groupRecord\n");
-    for (int i = 0; i < sh->fSt.nGroups; i++)
-    {
-        printf("%d ", groupRecord[i]);
-    }
-    printf("\n");
+
+    // Ciclo
     for (int i = 0; i < sh->fSt.nGroups; i++)
     {
         if (groupRecord[i] == WAIT)
@@ -215,6 +215,8 @@ static int decideNextGroup()
     }
 
     return nextGroup;
+
+    /* fim */
 }
 
 /**
@@ -249,7 +251,7 @@ static request waitForGroup()
         exit(EXIT_FAILURE);
     }
 
-    // TODO insert your code here 
+    // TODO insert your code here
     if (semDown(semgid, sh->receptionistReq) == -1)
     {
         perror("error on the up operation for semaphore access (WT)");
@@ -260,8 +262,6 @@ static request waitForGroup()
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-
-   
 
     /* fim */
 
@@ -274,8 +274,7 @@ static request waitForGroup()
     // TODO insert your code here
 
     ret = sh->fSt.receptionistRequest;
-    printf("Grup: %d ,type: %d\n",ret.reqGroup,
-    ret.reqType);
+
     sh->fSt.receptionistRequest.reqType = 40;
     sh->fSt.receptionistRequest.reqGroup = 40;
     saveState(nFic, &sh->fSt);
@@ -311,8 +310,9 @@ static void provideTableOrWaitingRoom(int n)
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-    if(n==1){
-    printf("1: %d,\n",n);
+    if (n == 1)
+    {
+        printf("1: %d,\n", n);
     }
     // TODO insert your code here
 
