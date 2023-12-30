@@ -228,7 +228,7 @@ static request waitForGroup()
     request ret;
 
     if (semDown(semgid, sh->mutex) == -1)                                                  /* enter critical region */{
-        perror("error on the up operation for semaphore access (WT)");
+        perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -241,7 +241,7 @@ static request waitForGroup()
     /* fim */
 
     if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
-        perror("error on the down operation for semaphore access (WT)");
+        perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -249,14 +249,14 @@ static request waitForGroup()
 
     // Bloquear o recepcionista até que um grupo faça um pedido
     if (semDown(semgid, sh->receptionistReq) == -1){
-        perror("error on the up operation for semaphore access (WT)");
+        perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
     /* fim */
 
     if (semDown(semgid, sh->mutex) == -1){                                                  /* enter critical region */
-        perror("error on the up operation for semaphore access (WT)");
+        perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -271,7 +271,7 @@ static request waitForGroup()
     /* fim */
 
     if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
-        perror("error on the down operation for semaphore access (WT)");
+        perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -279,7 +279,7 @@ static request waitForGroup()
 
     // Aualizar o semáforo para sinalizar que o recepcionista pode receber um pedido
     if (semUp(semgid, sh->receptionistRequestPossible) == -1){
-        perror("error on the down operation for semaphore access (WT)");
+        perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -300,7 +300,7 @@ static request waitForGroup()
 static void provideTableOrWaitingRoom(int n)
 {
     if (semDown(semgid, sh->mutex) == -1){                                                  /* enter critical region */
-        perror("error on the up operation for semaphore access (WT)");
+        perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -317,7 +317,7 @@ static void provideTableOrWaitingRoom(int n)
         groupRecord[n] = ATTABLE;
         // Sinalizar que o grupo pode prosseguir
         if (semUp(semgid, sh->waitForTable[n]) == -1){
-            perror("error on the down operation for semaphore access (WT)");
+            perror("error on the up operation for semaphore access (WT)");
             exit(EXIT_FAILURE);
         }
     }
@@ -330,7 +330,7 @@ static void provideTableOrWaitingRoom(int n)
     /* fim */
 
     if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
-        perror("error on the down operation for semaphore access (WT)");
+        perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 }
@@ -348,7 +348,7 @@ static void provideTableOrWaitingRoom(int n)
 static void receivePayment(int n)
 {
     if (semDown(semgid, sh->mutex) == -1){                                                  /* enter critical region */
-        perror("error on the up operation for semaphore access (WT)");
+        perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -360,7 +360,7 @@ static void receivePayment(int n)
 
     // Libertar a mesa que o grupo estava a ocupar
     if (semUp(semgid, sh->tableDone[sh->fSt.assignedTable[n]]) == -1){
-        perror("error on the down operation for semaphore access (WT)");
+        perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -372,7 +372,7 @@ static void receivePayment(int n)
     /* fim */
 
     if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
-        perror("error on the down operation for semaphore access (WT)");
+        perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
