@@ -1,5 +1,3 @@
-// teste
-
 /**
  *  \file semSharedMemChef.c (implementation file)
  *

@@ -424,5 +424,4 @@ static void checkOutAtReception (int id)
         perror ("error on the up operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
-
 }
