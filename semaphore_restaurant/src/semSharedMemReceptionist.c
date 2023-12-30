@@ -159,26 +159,22 @@ int decideTableOrWait(int n)
 {
     // TODO insert your code here
 
-    // ID da mesa em que o grupo se ira sentar
+    // ID da mesa em que o grupo se irá sentar
     int tableID = -1;
-    // Numero de mesa a atribuir (0 ou 1) e variavel para saber se a mesa esta em uso
+    // Numero de mesa a atribuir (0 ou 1) e váriavel para saber se a mesa esta em uso
     int numTable, notInUse;
 
     // Ciclos para verificar se existem mesas disponiveis ou nao
-    for (numTable = 0; numTable < NUMTABLES; numTable++)
-    {
+    for (numTable = 0; numTable < NUMTABLES; numTable++){
         notInUse = 1;
-        for (int i = 0; i < sh->fSt.nGroups; i++)
-        {
-            if (sh->fSt.assignedTable[i] == numTable)
-            {
+        for (int i = 0; i < sh->fSt.nGroups; i++){
+            if (sh->fSt.assignedTable[i] == numTable){
                 notInUse = 0;
                 break;
             }
         }
-        if (notInUse)
-        {
-            // Se existirem mesas disponiveis, atribuir ao ID o numero disponivel (0 ou 1)
+        if (notInUse){
+            // Se existirem mesas disponiveis, atribuir ao ID o número disponivel (0 ou 1)
             tableID = numTable;
             break;
         }
@@ -201,14 +197,13 @@ static int decideNextGroup()
 {
     // TODO insert your code here
 
-    // ID do proximo grupo a ser atendido
+    // Próximo grupo a ser atendido
     int nextGroup = -1;
 
-    // Ciclo
-    for (int i = 0; i < sh->fSt.nGroups; i++)
-    {
-        if (groupRecord[i] == WAIT)
-        {
+    // Ciclo para verificar se existem grupos à espera
+    for (int i = 0; i < sh->fSt.nGroups; i++){
+        if (groupRecord[i] == WAIT){
+            // Se existirem grupos a espera, atribuir ao nextGroup o número do grupo
             nextGroup = i;
             break;
         }
@@ -232,62 +227,61 @@ static request waitForGroup()
 {
     request ret;
 
-    if (semDown(semgid, sh->mutex) == -1)
-    { /* enter critical region */
+    if (semDown(semgid, sh->mutex) == -1)                                                  /* enter critical region */{
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
+    // Aualizar e guardar estado do recepcionista para esperar por um pedido
     sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
     saveState(nFic, &sh->fSt);
 
     /* fim */
 
-    if (semUp(semgid, sh->mutex) == -1)
-    { /* exit critical region */
+    if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
-    if (semDown(semgid, sh->receptionistReq) == -1)
-    {
+
+    // Bloquear o recepcionista até que um grupo faça um pedido
+    if (semDown(semgid, sh->receptionistReq) == -1){
         perror("error on the up operation for semaphore access (WT)");
-        exit(EXIT_FAILURE);
-    }
-    if (semUp(semgid, sh->receptionistRequestPossible) == -1)
-    {
-        perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
     /* fim */
 
-    if (semDown(semgid, sh->mutex) == -1)
-    { /* enter critical region */
+    if (semDown(semgid, sh->mutex) == -1){                                                  /* enter critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
+    // Atualizar a variavel ret com o pedido do grupo e reiniciar o pedido do recepcionista, guardando-o
     ret = sh->fSt.receptionistRequest;
-
-    sh->fSt.receptionistRequest.reqType = 40;
-    sh->fSt.receptionistRequest.reqGroup = 40;
+    sh->fSt.receptionistRequest.reqType = -1;
+    sh->fSt.receptionistRequest.reqGroup = -1;
     saveState(nFic, &sh->fSt);
 
     /* fim */
 
-    if (semUp(semgid, sh->mutex) == -1)
-    { /* exit critical region */
+    if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
+
+    // Aualizar o semáforo para sinalizar que o recepcionista pode receber um pedido
+    if (semUp(semgid, sh->receptionistRequestPossible) == -1){
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+    }
 
     /* fim */
 
@@ -305,40 +299,37 @@ static request waitForGroup()
  */
 static void provideTableOrWaitingRoom(int n)
 {
-    if (semDown(semgid, sh->mutex) == -1)
-    { /* enter critical region */
+    if (semDown(semgid, sh->mutex) == -1){                                                  /* enter critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-    if (n == 1)
-    {
-        printf("1: %d,\n", n);
-    }
+
     // TODO insert your code here
 
+    // Atualizar e guardar o estado do recepcionista para atribuição de mesas
     sh->fSt.st.receptionistStat = ASSIGNTABLE;
     saveState(nFic, &sh->fSt);
 
-    if (decideTableOrWait(n) != -1)
-    {
+    // Verificar se existem mesas disponiveis
+    if (decideTableOrWait(n) != -1){
+        // Se existirem mesas disponiveis, atribuir ao grupo a mesa disponivel e atualizar o estado deste
         sh->fSt.assignedTable[n] = decideTableOrWait(n);
         groupRecord[n] = ATTABLE;
-        if (semUp(semgid, sh->waitForTable[n]) == -1)
-        {
+        // Sinalizar que o grupo pode prosseguir
+        if (semUp(semgid, sh->waitForTable[n]) == -1){
             perror("error on the down operation for semaphore access (WT)");
             exit(EXIT_FAILURE);
         }
     }
-    else
-    {
+    else{
+        // Se não existirem mesas disponiveis, atualizar o estado do grupo para WAIT e incrementar o numero de grupos à espera
         sh->fSt.groupsWaiting++;
         groupRecord[n] = WAIT;
     }
 
     /* fim */
 
-    if (semUp(semgid, sh->mutex) == -1)
-    { /* exit critical region */
+    if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
@@ -356,37 +347,45 @@ static void provideTableOrWaitingRoom(int n)
 
 static void receivePayment(int n)
 {
-    if (semDown(semgid, sh->mutex) == -1)
-    { /* enter critical region */
+    if (semDown(semgid, sh->mutex) == -1){                                                  /* enter critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
+    // Atualizar e guardar o estado do recepcionista para receber pagamento
     sh->fSt.st.receptionistStat = RECVPAY;
     saveState(nFic, &sh->fSt);
-    if (semUp(semgid, sh->tableDone[sh->fSt.assignedTable[n]]) == -1)
-    {
+
+    // Libertar a mesa que o grupo estava a ocupar
+    if (semUp(semgid, sh->tableDone[sh->fSt.assignedTable[n]]) == -1){
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
+
+    // Sinalizar que a mesa está disponivel e atualizar o estado do grupo
     sh->fSt.assignedTable[n] = -1;
     groupRecord[n] = DONE;
-
     saveState(nFic, &sh->fSt);
 
-    if (semUp(semgid, sh->mutex) == -1)
-    { /* exit critical region */
+    /* fim */
+
+    if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
-    if (decideNextGroup() != -1)
-    {
+    // TODO insert your code here
+
+    // Verificar se existem grupos à espera
+    if (decideNextGroup() != -1){
+        // Se existirem grupos à espera, atribuir uma mesa ao grupo e atualizar o estado deste
         provideTableOrWaitingRoom(decideNextGroup());
         sh->fSt.groupsWaiting--;
     }
+
+    // Se não existirem grupos à espera o programa termina
 
     /* fim */
 }
