@@ -134,12 +134,12 @@ static void waitForOrder ()
     sh->fSt.st.chefStat = WAIT_FOR_ORDER;
     saveState(nFic, &sh->fSt); 
 
-    if (semUp (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
+    if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
     
-    // Espera que o Waiter dê informações da comida
+    // Espera que o Waiter dê inforções da comida
     if (semDown (semgid, sh->waitOrder) == -1) {
         perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
