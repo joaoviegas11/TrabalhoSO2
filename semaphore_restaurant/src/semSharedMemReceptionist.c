@@ -227,14 +227,14 @@ static request waitForGroup()
 {
     request ret;
 
-    if (semDown(semgid, sh->mutex) == -1)                                                  /* enter critical region */{
+    if (semDown(semgid, sh->mutex) == -1){                                                  /* enter critical region */
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
     // TODO insert your code here
 
-    // Aualizar e guardar estado do recepcionista para esperar por um pedido
+    // Aualizar e guardar estado do rececionista para esperar por um pedido
     sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
     saveState(nFic, &sh->fSt);
 
@@ -247,7 +247,7 @@ static request waitForGroup()
 
     // TODO insert your code here
 
-    // Bloquear o recepcionista até que um grupo faça um pedido
+    // Bloquear o rececionista até que um grupo faça um pedido
     if (semDown(semgid, sh->receptionistReq) == -1){
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
@@ -262,7 +262,7 @@ static request waitForGroup()
 
     // TODO insert your code here
 
-    // Atualizar a variavel ret com o pedido do grupo e reiniciar o pedido do recepcionista, guardando-o
+    // Atualizar a variavel ret com o pedido do grupo e reiniciar o pedido do rececionista, guardando-o
     ret = sh->fSt.receptionistRequest;
     sh->fSt.receptionistRequest.reqType = -1;
     sh->fSt.receptionistRequest.reqGroup = -1;
@@ -277,7 +277,7 @@ static request waitForGroup()
 
     // TODO insert your code here
 
-    // Aualizar o semáforo para sinalizar que o recepcionista pode receber um pedido
+    // Aualizar o semáforo para sinalizar que o rececionista pode receber um pedido
     if (semUp(semgid, sh->receptionistRequestPossible) == -1){
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
@@ -306,14 +306,17 @@ static void provideTableOrWaitingRoom(int n)
 
     // TODO insert your code here
 
-    // Atualizar e guardar o estado do recepcionista para atribuição de mesas
+    // Atualizar e guardar o estado do rececionista para atribuição de mesas
     sh->fSt.st.receptionistStat = ASSIGNTABLE;
     saveState(nFic, &sh->fSt);
 
+    // Chamar a função decideTableOrWait para saber se existem mesas disponiveis
+    int table = decideTableOrWait(n); 
+
     // Verificar se existem mesas disponiveis
-    if (decideTableOrWait(n) != -1){
+    if (table != -1){
         // Se existirem mesas disponiveis, atribuir ao grupo a mesa disponivel e atualizar o estado deste
-        sh->fSt.assignedTable[n] = decideTableOrWait(n);
+        sh->fSt.assignedTable[n] = table;
         groupRecord[n] = ATTABLE;
         // Sinalizar que o grupo pode prosseguir
         if (semUp(semgid, sh->waitForTable[n]) == -1){
@@ -354,7 +357,7 @@ static void receivePayment(int n)
 
     // TODO insert your code here
 
-    // Atualizar e guardar o estado do recepcionista para receber pagamento
+    // Atualizar e guardar o estado do rececionista para receber pagamento
     sh->fSt.st.receptionistStat = RECVPAY;
     saveState(nFic, &sh->fSt);
 
@@ -378,10 +381,13 @@ static void receivePayment(int n)
 
     // TODO insert your code here
 
+    // Chamar a função decideNextGroup para saber se existem grupos à espera
+    int group = decideNextGroup();
+
     // Verificar se existem grupos à espera
-    if (decideNextGroup() != -1){
+    if (group != -1){
         // Se existirem grupos à espera, atribuir uma mesa ao grupo e atualizar o estado deste
-        provideTableOrWaitingRoom(decideNextGroup());
+        provideTableOrWaitingRoom(group);
         sh->fSt.groupsWaiting--;
     }
 
