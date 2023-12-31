@@ -129,29 +129,28 @@ static void waitForOrder ()
         perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
+
     // Muda o estado do chef para WAIT_FOR_ORDER
     sh->fSt.st.chefStat = WAIT_FOR_ORDER;
     saveState(nFic, &sh->fSt); 
 
-    if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
-        perror ("error on the down operation for semaphore access (PT)");
+    if (semUp (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
+        perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
     
-    // Espera que o Waiter dê inforções da comida
+    // Espera que o Waiter dê informações da comida
     if (semDown (semgid, sh->waitOrder) == -1) {
         perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
 
-
-
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
         perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
 
-
+    // Indicar que o pedido foi recebido
     sh->fSt.foodOrder = 0;
     // Muda o estado do Chef para COOK
     sh->fSt.st.chefStat = COOK;
@@ -159,7 +158,6 @@ static void waitForOrder ()
     lastGroup=sh->fSt.foodGroup ;
     saveState(nFic, &sh->fSt);
 
-    
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
@@ -184,22 +182,18 @@ static void processOrder ()
 {
     usleep((unsigned int) floor ((MAXCOOK * random ()) / RAND_MAX + 100.0));
 
-
-
     // Espera que o Waiter esteja disponivel para receber um pedido
     if (semDown(semgid, sh->waiterRequestPossible) == -1) {
             perror ("error on the down operation for semaphore access (PT)");
             exit (EXIT_FAILURE);
         }
 
-
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
         perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
 
-
-    //Muda o estado do Chef para REST
+    // Muda o estado do Chef para REST
     sh->fSt.st.chefStat = REST; 
 
     // Guarda no waiterRequest o type FOODREADY para o Waiter saber que tem de receber a comida e o grupo guardado que pediu a comida
@@ -207,17 +201,14 @@ static void processOrder ()
     sh->fSt.waiterRequest.reqGroup = lastGroup;
     saveState(nFic, &sh->fSt);
 
-
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
-
 
     // Liberta o Waiter para processar o pedido
     if (semUp (semgid, sh->waiterRequest) == -1) {
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
-
 }

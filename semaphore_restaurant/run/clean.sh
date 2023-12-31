@@ -4,5 +4,5 @@ rm -f error*
 rm -f core
 
 # change 0x61066137 to your semaphore and shared memory key
-ipcrm -S 0x6111a2df
-ipcrm -M 0x6111a2df
+ipcrm -S 0x61116055
+ipcrm -M 0x61116055

@@ -228,17 +228,14 @@ static request waitForGroup()
         exit(EXIT_FAILURE);
     }
 
-
     // Aualizar e guardar estado do rececionista para esperar por um pedido
     sh->fSt.st.receptionistStat = WAIT_FOR_REQUEST;
     saveState(nFic, &sh->fSt);
-
 
     if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-
 
     // Bloquear o rececionista até que um grupo faça um pedido
     if (semDown(semgid, sh->receptionistReq) == -1){
@@ -246,12 +243,10 @@ static request waitForGroup()
         exit(EXIT_FAILURE);
     }
 
-
     if (semDown(semgid, sh->mutex) == -1){                                                  /* enter critical region */
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-
 
     // Atualizar a variavel ret com o pedido do grupo e reiniciar o pedido do rececionista, guardando-o
     ret = sh->fSt.receptionistRequest;
@@ -259,12 +254,10 @@ static request waitForGroup()
     sh->fSt.receptionistRequest.reqGroup = -1;
     saveState(nFic, &sh->fSt);
 
-
     if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-
 
     // Aualizar o semáforo para sinalizar que o rececionista pode receber um pedido
     if (semUp(semgid, sh->receptionistRequestPossible) == -1){
@@ -292,7 +285,6 @@ static void provideTableOrWaitingRoom(int n)
         exit(EXIT_FAILURE);
     }
 
-
     // Atualizar e guardar o estado do rececionista para atribuição de mesas
     sh->fSt.st.receptionistStat = ASSIGNTABLE;
     saveState(nFic, &sh->fSt);
@@ -317,7 +309,6 @@ static void provideTableOrWaitingRoom(int n)
         groupRecord[n] = WAIT;
     }
 
-
     if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
@@ -341,7 +332,6 @@ static void receivePayment(int n)
         exit(EXIT_FAILURE);
     }
 
-
     // Atualizar e guardar o estado do rececionista para receber pagamento
     sh->fSt.st.receptionistStat = RECVPAY;
     saveState(nFic, &sh->fSt);
@@ -357,12 +347,10 @@ static void receivePayment(int n)
     groupRecord[n] = DONE;
     saveState(nFic, &sh->fSt);
 
-
     if (semUp(semgid, sh->mutex) == -1){                                             /* exit critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-
 
     // Chamar a função decideNextGroup para saber se existem grupos à espera
     int group = decideNextGroup();
@@ -375,5 +363,4 @@ static void receivePayment(int n)
     }
 
     // Se não existirem grupos à espera o programa termina
-
 }

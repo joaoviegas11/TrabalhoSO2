@@ -147,61 +147,49 @@ static request waitForClientOrChef()
 {
     request req;
 
-    if (semDown(semgid, sh->mutex) == -1)
-    { /* enter critical region */
-        perror("error on the up operation for semaphore access (WT)");
-        exit(EXIT_FAILURE);
-    }
-
-
-    sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
-    saveState(nFic, &sh->fSt);
-
-    
-
-    if (semUp(semgid, sh->mutex) == -1)
-    { /* exit critical region */
-        perror("error on the up operation for semaphore access (WT)");
-        exit(EXIT_FAILURE);
-    }
-
-
-    if (semDown(semgid, sh->waiterRequest) == -1)
-    {
+    if (semDown(semgid, sh->mutex) == -1){                                                      /* enter critical region */
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
-    
+    // Atualizar e guardar o estado do Waiter para WAIT_FOR_REQUEST
+    sh->fSt.st.waiterStat = WAIT_FOR_REQUEST;
+    saveState(nFic, &sh->fSt);
 
-    if (semDown(semgid, sh->mutex) == -1)
-    { /* enter critical region */
+    if (semUp(semgid, sh->mutex) == -1){                                                      /* exit critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
 
+    // Bloquear o Waiter até que haja um pedido
+    if (semDown(semgid, sh->waiterRequest) == -1){
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+    }
+
+    if (semDown(semgid, sh->mutex) == -1){                                                      /* enter critical region */
+        perror("error on the down operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+    }
+
+    // Atualizar a variável req com o pedido com o pedido do grupo e reiniciar o pedido do Waiter, guardando o estado
     req = sh->fSt.waiterRequest;
     sh->fSt.waiterRequest.reqType = -1;
     sh->fSt.waiterRequest.reqGroup = -1;
     saveState(nFic, &sh->fSt);
 
-    
-
-    if (semUp(semgid, sh->mutex) == -1)
-    { /* exit critical region */
+    if (semUp(semgid, sh->mutex) == -1){                                                      /* exit critical region */
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
-
-    if (semUp(semgid, sh->waiterRequestPossible) == -1)
-    { /* exit critical region */
+    // Sinalizar que o Waiter pode receber pedidos
+    if (semUp(semgid, sh->waiterRequestPossible) == -1){
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
     
-
     return req;
 }
 
@@ -216,41 +204,37 @@ static request waitForClientOrChef()
  */
 static void informChef(int n)
 {
-
-    if (semDown(semgid, sh->mutex) == -1)
-    { /* enter critical region */
-        perror("error on the up operation for semaphore access (WT)");
+    if (semDown(semgid, sh->mutex) == -1){                                                      /* enter critical region */
+        perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
-
+    // Atualizar o estado do Waiter para INFORM_CHEF, indicar que há um pedido de comida e qual o grupo que o pediu e guardar os respetivos estados
     sh->fSt.st.waiterStat = INFORM_CHEF;
     sh->fSt.foodOrder = 1;
     sh->fSt.foodGroup = n;
     saveState(nFic, &sh->fSt);
 
-    
+    if (semUp(semgid, sh->mutex) == -1){                                                      /* exit critical region */
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+    }
 
-    if (semUp(semgid, sh->mutex) == -1) /* exit critical region */
-    {
+    // Sinalizar que o pedido do grupo foi recebido pelo Waiter
+    if (semUp(semgid, sh->requestReceived[sh->fSt.assignedTable[n]]) == -1){
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+    }
+
+    // Informar o Chef que há um pedido de comida
+    if (semUp(semgid, sh->waitOrder) == -1){
+        perror("error on the up operation for semaphore access (WT)");
+        exit(EXIT_FAILURE);
+    }
+
+    // Bloquear o Waiter até que o Chef receba o pedido
+    if (semDown(semgid, sh->orderReceived) == -1){
         perror("error on the down operation for semaphore access (WT)");
-        exit(EXIT_FAILURE);
-    }
-
-    if (semUp(semgid, sh->requestReceived[sh->fSt.assignedTable[n]]) == -1)
-    {
-        perror("error on the up operation for semaphore access (WT)");
-        exit(EXIT_FAILURE);
-    }
-    if (semUp(semgid, sh->waitOrder) == -1)
-    {
-        perror("error on the up operation for semaphore access (WT)");
-        exit(EXIT_FAILURE);
-    }
-
-    if (semDown(semgid, sh->orderReceived) == -1)
-    { /* exit critical region */
-        perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
@@ -268,28 +252,23 @@ static void informChef(int n)
 
 static void takeFoodToTable(int n)
 {
-
-    
-    if (semDown(semgid, sh->mutex) == -1)
-    { /* enter critical region */
-        perror("error on the up operation for semaphore access (WT)");
+    if (semDown(semgid, sh->mutex) == -1){                                                      /* enter critical region */
+        perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
     
+    // Atualizar o estado do Waiter para TAKE_TO_TABLE e guarda-o
     sh->fSt.st.waiterStat = TAKE_TO_TABLE;
     saveState(nFic, &sh->fSt);
 
-    if (semUp(semgid, sh->foodArrived[sh->fSt.assignedTable[n]]) == -1)
-    {
+    // Informar o grupo que a comida chegou
+    if (semUp(semgid, sh->foodArrived[sh->fSt.assignedTable[n]]) == -1){
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 
-    
-
-    if (semUp(semgid, sh->mutex) == -1)
-    { /* exit critical region */
-        perror("error on the down operation for semaphore access (WT)");
+    if (semUp(semgid, sh->mutex) == -1){                                                      /* exit critical region */
+        perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
 }
