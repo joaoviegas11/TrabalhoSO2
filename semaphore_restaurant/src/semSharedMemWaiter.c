@@ -161,7 +161,6 @@ static request waitForClientOrChef()
         exit(EXIT_FAILURE);
     }
 
-
     // Bloquear o Waiter até que haja um pedido
     if (semDown(semgid, sh->waiterRequest) == -1){
         perror("error on the down operation for semaphore access (WT)");
@@ -189,7 +188,6 @@ static request waitForClientOrChef()
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-    
     return req;
 }
 
@@ -237,8 +235,6 @@ static void informChef(int n)
         perror("error on the down operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-
-    
 }
 
 /**

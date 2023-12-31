@@ -264,8 +264,6 @@ static request waitForGroup()
         perror("error on the up operation for semaphore access (WT)");
         exit(EXIT_FAILURE);
     }
-
-
     return ret;
 }
 
