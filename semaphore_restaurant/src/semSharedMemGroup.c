@@ -273,16 +273,21 @@ static void orderFood (int id)
     sh->fSt.waiterRequest.reqType = FOODREQ;
     saveState(nFic, &sh->fSt);
 
+    
+
+    if (semUp (semgid, sh->mutex) == -1) {                                                     /* exit critical region */
+        perror ("error on the up operation for semaphore access (CT)");
+        exit (EXIT_FAILURE);
+    }
+
     // Liberta o waiter para prcessar o request(pedido da comida)
     if (semUp (semgid, sh->waiterRequest) == -1) {
         perror ("error on the up operation for semaphore access (CT)");
         exit (EXIT_FAILURE);
     }
 
-    /* fim */
-
-    if (semUp (semgid, sh->mutex) == -1) {                                                     /* exit critical region */
-        perror ("error on the up operation for semaphore access (CT)");
+    if (semDown(semgid, sh->requestReceived[sh->fSt.assignedTable[id]]) == -1) { 
+        perror ("error on the up operation for semaphore access (WT)");
         exit (EXIT_FAILURE);
     }
 }

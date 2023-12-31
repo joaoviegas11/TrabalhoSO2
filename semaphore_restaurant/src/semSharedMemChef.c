@@ -126,13 +126,12 @@ int main (int argc, char *argv[])
 static void waitForOrder ()
 {
 
-    // TODO insert your code here
 
     // Muda o estado do chef para WAIT_FOR_ORDER
     sh->fSt.st.chefStat = WAIT_FOR_ORDER;
     saveState(nFic, &sh->fSt); 
 
-    // Espera que o Waiter dê uma order
+    // Espera que o Waiter dê inforções da comida
     if (semDown (semgid, sh->waitOrder) == -1) {
         perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
@@ -146,7 +145,6 @@ static void waitForOrder ()
         exit (EXIT_FAILURE);
     }
 
-    // TODO insert your code here
 
     sh->fSt.foodOrder = 0;
     // Muda o estado do Chef para COOK
@@ -158,6 +156,12 @@ static void waitForOrder ()
     /* fim */
     
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
+        perror ("error on the up operation for semaphore access (PT)");
+        exit (EXIT_FAILURE);
+    }
+
+    // Desbloqueia o Waiter pois já recebeu e guardou a informação do pedido
+    if (semUp (semgid, sh->orderReceived) == -1) {
         perror ("error on the up operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
@@ -175,13 +179,8 @@ static void processOrder ()
 {
     usleep((unsigned int) floor ((MAXCOOK * random ()) / RAND_MAX + 100.0));
 
-    // TODO insert your code here
 
-    // Desbloqueia o Waiter pois recebeu o order do Waiter
-    if (semUp (semgid, sh->orderReceived) == -1) {
-        perror ("error on the up operation for semaphore access (PT)");
-        exit (EXIT_FAILURE);
-    }
+
 
     // Espera que o Waiter esteja disponivel para receber um pedido
     if (semDown(semgid, sh->waiterRequestPossible) == -1) {
@@ -196,7 +195,6 @@ static void processOrder ()
         exit (EXIT_FAILURE);
     }
 
-    // TODO insert your code here
 
     //Muda o estado do Chef para REST
     sh->fSt.st.chefStat = REST; 
@@ -213,7 +211,6 @@ static void processOrder ()
         exit (EXIT_FAILURE);
     }
 
-    // TODO insert your code here
 
     // Liberta o Waiter para processar o pedido
     if (semUp (semgid, sh->waiterRequest) == -1) {
