@@ -51,8 +51,6 @@ static void informChef(int group);
 /** \brief waiter takes food to table */
 static void takeFoodToTable(int group);
 
-static test;
-
 /**
  *  \brief Main program.
  *
