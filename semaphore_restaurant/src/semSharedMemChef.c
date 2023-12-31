@@ -125,19 +125,25 @@ int main (int argc, char *argv[])
  */
 static void waitForOrder ()
 {
-
-
+    if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
+        perror ("error on the down operation for semaphore access (PT)");
+        exit (EXIT_FAILURE);
+    }
     // Muda o estado do chef para WAIT_FOR_ORDER
     sh->fSt.st.chefStat = WAIT_FOR_ORDER;
     saveState(nFic, &sh->fSt); 
 
+    if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
+        perror ("error on the down operation for semaphore access (PT)");
+        exit (EXIT_FAILURE);
+    }
+    
     // Espera que o Waiter dê inforções da comida
     if (semDown (semgid, sh->waitOrder) == -1) {
         perror ("error on the down operation for semaphore access (PT)");
         exit (EXIT_FAILURE);
     }
 
-    /* fim */
 
 
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
@@ -153,7 +159,6 @@ static void waitForOrder ()
     lastGroup=sh->fSt.foodGroup ;
     saveState(nFic, &sh->fSt);
 
-    /* fim */
     
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
@@ -181,14 +186,12 @@ static void processOrder ()
 
 
 
-
     // Espera que o Waiter esteja disponivel para receber um pedido
     if (semDown(semgid, sh->waiterRequestPossible) == -1) {
             perror ("error on the down operation for semaphore access (PT)");
             exit (EXIT_FAILURE);
         }
 
-    /* fim */
 
     if (semDown (semgid, sh->mutex) == -1) {                                                      /* enter critical region */
         perror ("error on the down operation for semaphore access (PT)");
@@ -204,7 +207,6 @@ static void processOrder ()
     sh->fSt.waiterRequest.reqGroup = lastGroup;
     saveState(nFic, &sh->fSt);
 
-    /* fim */
 
     if (semUp (semgid, sh->mutex) == -1) {                                                      /* exit critical region */
         perror ("error on the up operation for semaphore access (PT)");
@@ -218,5 +220,4 @@ static void processOrder ()
         exit (EXIT_FAILURE);
     }
 
-    /* fim */
 }
