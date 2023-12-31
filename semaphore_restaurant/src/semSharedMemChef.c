@@ -7,7 +7,7 @@
  *  Implementation with SVIPC.
  *
  *  Definition of the operations carried out by the chef:
- *     \li waitOrder
+ *     \li waitForOrder
  *     \li processOrder
  *
  *  \author Nuno Lau - December 2023
